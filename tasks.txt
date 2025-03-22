@@ -1,0 +1,8 @@
+[✔] Wakeup
+[✔] Workout/YOga
+[✔] Breakfast
+[✔] College Hours
+[✔] Snacks
+[✔] Read a Book
+[✔] Dinner
+[✔] sleep

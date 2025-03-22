@@ -1,0 +1,149 @@
+// Runlinc Task Manager - Advanced Version
+
+
+
+
+// HTML File (index.html)
+const appHTML = `
+  <div class='app-container'>
+    <h1>📝 My Task Manager</h1>
+    <div class='task-input-section'>
+      <input type='text' id='task-input' placeholder='Enter a task'>
+      <button id='add-task'>➕ Add Task</button>
+    </div>
+    <div class='task-stats'>
+      <p>Pending: <span id='pending-count'>0</span> | Completed: <span id='completed-count'>0</span></p>
+    </div>
+    <ul id='task-list'></ul>
+    <button id='export-tasks'>📂 Export Tasks</button>
+  </div>
+`;
+
+document.body.innerHTML = appHTML;
+
+
+
+
+
+// CSS File (style.css)
+const styles = document.createElement('style');
+styles.innerHTML = `
+  * { font-family: Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+  .app-container { max-width: 400px; margin: auto; text-align: center; padding: 20px; }
+  h1 { color: #4CAF50; margin-bottom: 15px; }
+  .task-input-section { display: flex; justify-content: space-between; margin-bottom: 15px; }
+  input { flex: 1; padding: 10px; border: 2px solid #4CAF50; border-radius: 5px; }
+  button { padding: 10px 15px; border: none; border-radius: 5px; background: #4CAF50; color: white; cursor: pointer; }
+  ul { list-style: none; padding: 0; }
+  li { background: #f9f9f9; margin: 5px 0; padding: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+  .done { text-decoration: line-through; opacity: 0.6; }
+  .task-buttons { display: flex; gap: 5px; }
+  .done-btn { background: #007BFF; }
+  .delete-btn { background: #FF0000; }
+  .pin-btn { background: #FFA500; }
+  .done-btn, .delete-btn, .pin-btn { padding: 5px 10px; color: white; border: none; border-radius: 3px; cursor: pointer; }
+  #export-tasks { margin-top: 15px; background: #555; }
+`;
+document.head.appendChild(styles);
+
+
+
+
+
+// JavaScript File (script.js)
+const taskInput = document.getElementById('task-input');
+const taskList = document.getElementById('task-list');
+const addTaskButton = document.getElementById('add-task');
+const pendingCount = document.getElementById('pending-count');
+const completedCount = document.getElementById('completed-count');
+const exportButton = document.getElementById('export-tasks');
+
+// Load tasks from storage
+const loadTasks = () => {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+  taskList.innerHTML = '';
+  let pending = 0, completed = 0;
+  tasks.forEach((task, index) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span class='task-text ${task.done ? "done" : ""}'>${task.text}</span>
+      <div class='task-buttons'>
+        <button class='done-btn' onclick='toggleDone(${index})'>✔️ Done</button>
+        <button class='delete-btn' onclick='deleteTask(${index})'>❌ Remove</button>
+        <button class='pin-btn' onclick='pinTask(${index})'>📌 Pin</button>
+      </div>
+    `;
+    taskList.appendChild(li);
+    task.done ? completed++ : pending++;
+  });
+  pendingCount.textContent = pending;
+  completedCount.textContent = completed;
+};
+
+// Save tasks
+const saveTasks = () => {
+  const tasks = [...taskList.children].map(task => {
+    return {
+      text: task.querySelector('.task-text').textContent.trim(),
+      done: task.querySelector('.task-text').classList.contains('done')
+    };
+  });
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+};
+
+// Add Task
+addTaskButton.addEventListener('click', () => {
+  if (taskInput.value === '') return alert('Please enter a task!');
+  const li = document.createElement('li');
+  li.innerHTML = `
+    <span class='task-text'>${taskInput.value}</span>
+    <div class='task-buttons'>
+      <button class='done-btn' onclick='toggleDone(${taskList.children.length})'>✔️ Done</button>
+      <button class='delete-btn' onclick='deleteTask(${taskList.children.length})'>❌ Remove</button>
+      <button class='pin-btn' onclick='pinTask(${taskList.children.length})'>📌 Pin</button>
+    </div>
+  `;
+  taskList.appendChild(li);
+  saveTasks();
+  taskInput.value = '';
+  loadTasks();
+});
+
+// Toggle Done
+window.toggleDone = (index) => {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+  tasks[index].done = !tasks[index].done;
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+  loadTasks();
+};
+
+// Delete Task
+window.deleteTask = (index) => {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+  tasks.splice(index, 1);
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+  loadTasks();
+};
+
+// Pin Task (Moves to Top)
+window.pinTask = (index) => {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+  const task = tasks.splice(index, 1)[0];
+  tasks.unshift(task);
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+  loadTasks();
+};
+
+// Export Tasks
+exportButton.addEventListener('click', () => {
+  const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+  const text = tasks.map(task => (task.done ? '[✔] ' : '[ ] ') + task.text).join('\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tasks.txt';
+  a.click();
+});
+
+// Load tasks on page load
+loadTasks();
